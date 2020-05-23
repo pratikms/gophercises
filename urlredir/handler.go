@@ -6,7 +6,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type pathUrl struct {
+type pathURL struct {
 	Path string `yaml:"path,omitempty"`
 	URL  string `yaml:"url,omitempty"`
 }
@@ -58,8 +58,8 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 	return MapHandler(pathsToUrls, fallback), nil
 }
 
-func parseYaml(data []byte) ([]pathUrl, error) {
-	var pathUrls []pathUrl
+func parseYaml(data []byte) ([]pathURL, error) {
+	var pathUrls []pathURL
 	err := yaml.Unmarshal(data, &pathUrls)
 	if err != nil {
 		return nil, err
@@ -67,7 +67,7 @@ func parseYaml(data []byte) ([]pathUrl, error) {
 	return pathUrls, nil
 }
 
-func buildMap(pathUrls []pathUrl) map[string]string {
+func buildMap(pathUrls []pathURL) map[string]string {
 	pathsToUrls := make(map[string]string)
 	for _, pu := range pathUrls {
 		pathsToUrls[pu.Path] = pu.URL
