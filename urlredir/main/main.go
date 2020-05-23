@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"gophercises/urlredir/urlredir"
+	"github.com/pratikms/gophercises/urlredir"
 )
 
 func main() {
@@ -29,6 +29,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	fmt.Println("Starting the server on :8080")
 	http.ListenAndServe(":8080", yamlHandler)
 }

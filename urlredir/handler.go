@@ -2,7 +2,14 @@ package urlredir
 
 import (
 	"net/http"
+
+	"gopkg.in/yaml.v2"
 )
+
+type pathUrl struct {
+	Path string `yaml:"path,omitempty"`
+	URL  string `yaml:"url,omitempty"`
+}
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -11,8 +18,13 @@ import (
 // If the path is not provided in the map, then the fallback
 // http.Handler will be called instead.
 func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.HandlerFunc {
-	//	TODO: Implement this...
-	return nil
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		if dest, ok := pathsToUrls[path]; ok {
+			http.Redirect(w, r, dest, http.StatusFound)
+		}
+		fallback.ServeHTTP(w, r)
+	}
 }
 
 // YAMLHandler will parse the provided YAML and then return
@@ -26,12 +38,39 @@ func MapHandler(pathsToUrls map[string]string, fallback http.Handler) http.Handl
 //     - path: /some-path
 //       url: https://www.some-url.com/demo
 //
-// The only errors that can be returned all related to having
+// The only errors that can be returned are related to having
 // invalid YAML data.
 //
 // See MapHandler to create a similar http.HandlerFunc via
 // a mapping of paths to urls.
 func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
-	// TODO: Implement this...
-	return nil, nil
+
+	// Parse YAML
+	pathUrls, err := parseYaml(yml)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert YAML to map
+	pathsToUrls := buildMap(pathUrls)
+
+	// Return a MapHandler using the map just created
+	return MapHandler(pathsToUrls, fallback), nil
+}
+
+func parseYaml(data []byte) ([]pathUrl, error) {
+	var pathUrls []pathUrl
+	err := yaml.Unmarshal(data, &pathUrls)
+	if err != nil {
+		return nil, err
+	}
+	return pathUrls, nil
+}
+
+func buildMap(pathUrls []pathUrl) map[string]string {
+	pathsToUrls := make(map[string]string)
+	for _, pu := range pathUrls {
+		pathsToUrls[pu.Path] = pu.URL
+	}
+	return pathsToUrls
 }
