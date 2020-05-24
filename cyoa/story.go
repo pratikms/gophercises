@@ -25,8 +25,9 @@ type Option struct {
 type HandlerOpts func(h *handler)
 
 type handler struct {
-	s Story
-	t *template.Template
+	s      Story
+	t      *template.Template
+	pathFn func(r *http.Request) string
 }
 
 var defaultHandlerTemplate = `
@@ -101,9 +102,23 @@ func init() {
 	tpl = template.Must(template.New("").Parse(defaultHandlerTemplate))
 }
 
+func defaultPathFn(r *http.Request) string {
+	path := strings.TrimSpace(r.URL.Path)
+	if path == "" || path == "/" {
+		path = "/intro"
+	}
+	return path[1:]
+}
+
 func WithTemplate(t *template.Template) HandlerOpts {
 	return func(h *handler) {
 		h.t = t
+	}
+}
+
+func WithPath(fn func(r *http.Request) string) HandlerOpts {
+	return func(h *handler) {
+		h.pathFn = fn
 	}
 }
 
@@ -117,7 +132,7 @@ func JSONStory(r io.Reader) (Story, error) {
 }
 
 func NewHandler(s Story, opts ...HandlerOpts) http.Handler {
-	h := handler{s, tpl}
+	h := handler{s, tpl, defaultPathFn}
 	for _, opt := range opts {
 		opt(&h)
 	}
@@ -125,11 +140,7 @@ func NewHandler(s Story, opts ...HandlerOpts) http.Handler {
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimSpace(r.URL.Path)
-	if path == "" || path == "/" {
-		path = "/intro"
-	}
-	path = path[1:]
+	path := h.pathFn(r)
 	if chapter, ok := h.s[path]; ok {
 		err := h.t.Execute(w, chapter)
 		if err != nil {
