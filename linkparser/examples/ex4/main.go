@@ -9,13 +9,7 @@ import (
 
 var exampleHTML = `<html>
 <body>
-  <h1>Hello world!</h1>
-  <a href="/some-page">
-	  A link to 
-	  <span>some</span> 
-	  page
-	</a>
-  <a href="/some-other-page">A link <div>to some</div> other page</a>
+  <a href="/dog-cat">dog cat <!-- commented text SHOULD NOT be included! --> after comment</a>
 </body>
 </html>`
 
