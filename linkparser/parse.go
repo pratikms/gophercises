@@ -1,8 +1,8 @@
 package linkparser
 
 import (
-	"fmt"
 	"io"
+	"strings"
 
 	"golang.org/x/net/html"
 )
@@ -13,6 +13,20 @@ type Link struct {
 	Text string
 }
 
+func text(n *html.Node) string {
+	if n.Type == html.TextNode {
+		return n.Data
+	}
+	if n.Type != html.ElementNode {
+		return ""
+	}
+	var ret string
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		ret += text(c) + " "
+	}
+	return strings.Join(strings.Fields(ret), " ")
+}
+
 func buildLinks(n *html.Node) Link {
 	var ret Link
 	for _, attr := range n.Attr {
@@ -21,7 +35,7 @@ func buildLinks(n *html.Node) Link {
 			break
 		}
 	}
-	ret.Text = "TODO: Parse the text..."
+	ret.Text = text(n)
 	return ret
 }
 
@@ -46,7 +60,7 @@ func Parse(r io.Reader) ([]Link, error) {
 	nodes := linkNodes(doc)
 	for _, node := range nodes {
 		links = append(links, buildLinks(node))
-		fmt.Println(node)
+		// fmt.Println(node)
 	}
 	return links, nil
 }
