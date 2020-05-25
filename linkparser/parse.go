@@ -13,15 +13,15 @@ type Link struct {
 	Text string
 }
 
-func dfs(n *html.Node, padding string) {
-	msg := n.Data
-	if n.Type == html.ElementNode {
-		msg = "<" + msg + ">"
+func linkNodes(n *html.Node) []*html.Node {
+	var ret []*html.Node
+	if n.Type == html.ElementNode && n.Data == "a" {
+		return []*html.Node{n}
 	}
-	fmt.Println(padding, msg)
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		dfs(c, padding+"  ")
+		ret = append(ret, linkNodes(c)...)
 	}
+	return ret
 }
 
 // Parse will take an HTML document and will return a slice of links parsed from it
@@ -30,6 +30,9 @@ func Parse(r io.Reader) ([]Link, error) {
 	if err != nil {
 		return nil, err
 	}
-	dfs(doc, "")
+	nodes := linkNodes(doc)
+	for _, node := range nodes {
+		fmt.Println(node)
+	}
 	return nil, nil
 }
