@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -10,12 +11,24 @@ import (
 	"github.com/pratikms/gophercises/linkparser"
 )
 
-func main() {
-	urlFlag := flag.String("url", "https://gophercises.com", "the URL that you want to build a sitemap for")
-	flag.Parse()
+func hrefs(body io.Reader, base string) []string {
+	var hrefs []string
+	links, _ := linkparser.Parse(body)
+	for _, l := range links {
+		switch {
+		case strings.HasPrefix(l.Href, "/"):
+			hrefs = append(hrefs, base+l.Href)
+		case strings.HasPrefix(l.Href, "http"):
+			hrefs = append(hrefs, l.Href)
+		}
+	}
 
-	fmt.Println(*urlFlag)
-	resp, err := http.Get(*urlFlag)
+	return hrefs
+}
+
+func get(urlStr string) []string {
+	fmt.Println(urlStr)
+	resp, err := http.Get(urlStr)
 	if err != nil {
 		panic(err)
 	}
@@ -30,18 +43,16 @@ func main() {
 	fmt.Println("Request URL: ", reqURL)
 	fmt.Println("Base URL: ", base)
 
-	var hrefs []string
-	links, _ := linkparser.Parse(resp.Body)
-	for _, l := range links {
-		switch {
-		case strings.HasPrefix(l.Href, "/"):
-			hrefs = append(hrefs, base+l.Href)
-		case strings.HasPrefix(l.Href, "http"):
-			hrefs = append(hrefs, l.Href)
-		}
-	}
+	return hrefs(resp.Body, base)
+}
 
-	for _, href := range hrefs {
+func main() {
+	urlFlag := flag.String("url", "https://gophercises.com", "the URL that you want to build a sitemap for")
+	flag.Parse()
+
+	pages := get(*urlFlag)
+	for _, href := range pages {
 		fmt.Println(href)
 	}
+
 }
