@@ -1,24 +1,16 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func rotate(s rune, delta int, key []rune) rune {
-	idx := -1
-	for i, r := range key {
-		if r == s {
-			idx = i
-			break
-		}
-	}
+	idx := strings.IndexRune(string(key), s)
 	if idx < 0 {
 		panic("Rune not found in key")
 	}
-	for i := 0; i < delta; i++ {
-		idx++
-		if idx >= len(key) {
-			idx = 0
-		}
-	}
+	idx = (idx + delta) % len(key)
 	return key[idx]
 }
 
