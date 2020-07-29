@@ -9,8 +9,8 @@ import (
 )
 
 type Phone struct {
-	id     int
-	number string
+	Id     int
+	Number string
 }
 
 const (
@@ -53,6 +53,31 @@ func getPhone(db *sql.DB, id int) (string, error) {
 	return number, nil
 }
 
+func findPhone(db *sql.DB, number string) (*Phone, error) {
+	var p Phone
+	row := db.QueryRow("SELECT * FROM phone_numbers WHERE value=$1", number)
+	err := row.Scan(&p.Id, &p.Number)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &p, nil
+}
+
+func updatePhone(db *sql.DB, p Phone) error {
+	statement := `UPDATE phone_numbers SET value=$2 where id=$1`
+	_, err := db.Exec(statement, p.Id, p.Number)
+	return err
+}
+
+func deletePhone(db *sql.DB, id int) error {
+	statement := `DELETE FROM phone_numbers WHERE id=$1`
+	_, err := db.Exec(statement, id)
+	return err
+}
+
 func allPhones(db *sql.DB) ([]Phone, error) {
 	rows, err := db.Query("SELECT id, value FROM phone_numbers")
 	if err != nil {
@@ -63,7 +88,7 @@ func allPhones(db *sql.DB) ([]Phone, error) {
 	var ret []Phone
 	for rows.Next() {
 		var p Phone
-		if err := rows.Scan(&p.id, &p.number); err != nil {
+		if err := rows.Scan(&p.Id, &p.Number); err != nil {
 			return nil, err
 		}
 		ret = append(ret, p)
@@ -150,6 +175,20 @@ func main() {
 	phones, err := allPhones(db)
 	must(err)
 	for _, p := range phones {
-		fmt.Printf("%+v\n", p)
+		fmt.Printf("Processing %+v\n", p)
+		number := normalize(p.Number)
+		if number != p.Number {
+			fmt.Println("Updating or removing ", number)
+			existing, err := findPhone(db, number)
+			must(err)
+			if existing != nil {
+				must(deletePhone(db, p.Id))
+			} else {
+				p.Number = number
+				must(updatePhone(db, p))
+			}
+		} else {
+			fmt.Println("No changes required")
+		}
 	}
 }
