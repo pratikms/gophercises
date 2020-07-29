@@ -38,6 +38,16 @@ func must(err error) {
 	}
 }
 
+func insertPhone(db *sql.DB, phone string) (int, error) {
+	var id int
+	statement := `INSERT INTO phone_numbers(value) VALUES ($1) RETURNING id`
+	err := db.QueryRow(statement, phone).Scan(&id)
+	if err != nil {
+		return -1, err
+	}
+	return id, nil
+}
+
 func createPhoneNumbersTable(db *sql.DB) error {
 	statement := `
 	CREATE TABLE IF NOT EXISTS phone_numbers (
@@ -79,4 +89,21 @@ func main() {
 	defer db.Close()
 
 	must(createPhoneNumbersTable(db))
+
+	_, err = insertPhone(db, " 1234567890")
+	must(err)
+	_, err = insertPhone(db, "123 456 7891")
+	must(err)
+	_, err = insertPhone(db, "(123) 456 7892")
+	must(err)
+	_, err = insertPhone(db, "(123) 456-7893")
+	must(err)
+	_, err = insertPhone(db, "123-456-7894")
+	must(err)
+	_, err = insertPhone(db, "123-456-7890")
+	must(err)
+	_, err = insertPhone(db, "1234567892")
+	must(err)
+	_, err = insertPhone(db, "(123)456-7892")
+	must(err)
 }
